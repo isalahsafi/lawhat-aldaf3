@@ -54,6 +54,7 @@
   setInterval(() => { if (refreshWanted && !document.querySelector('.overlay')) { refreshWanted = false; App.refresh(); } }, 1500);
 
   // ---------- التحديثات ----------
+  let applying = false;
   function watchUpdates() {
     if (!('serviceWorker' in navigator)) return;
     navigator.serviceWorker.register('sw.js').then((reg) => {
@@ -62,7 +63,7 @@
         const b = $('#updbar') || Object.assign(document.createElement('div'), { id: 'updbar', className: 'updbar' });
         b.innerHTML = '<span>✦ تحديث جديد جاهز</span><button class="btn sm p">تطبيق الآن</button>';
         document.body.appendChild(b);
-        $('button', b).onclick = () => { b.innerHTML = '<span>جارٍ التحديث…</span>'; w.postMessage('skipWaiting'); };
+        $('button', b).onclick = () => { applying = true; b.innerHTML = '<span>جارٍ التحديث…</span>'; w.postMessage('skipWaiting'); };
       };
       if (reg.waiting) offer(reg.waiting);
       reg.addEventListener('updatefound', () => {
@@ -71,8 +72,9 @@
       });
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
     }).catch(() => {});
+    // إعادة التحميل فقط بعد «تطبيق الآن» (وليس عند أول تثبيت، حتى لا يضيع ما يُكتب)
     let reloading = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloading) { reloading = true; location.reload(); } });
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (applying && !reloading) { reloading = true; location.reload(); } });
   }
 
   // ---------- الإعداد الأول ----------
