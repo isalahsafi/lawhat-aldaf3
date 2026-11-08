@@ -1,0 +1,32 @@
+/* إضافات تطبيق الهاتف فوق تصميم المنصة */
+.box{border-radius:12px;background:var(--surface-2);padding:9px 11px}
+.btn.wide{display:block;width:100%;text-align:center}
+
+/* شريط الحالة: دون اتصال، عمليات بانتظار المزامنة، أسعار معلّقة، تعارض */
+.netbar{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:12.5px;border-radius:12px;padding:7px 12px;margin:0 0 12px;
+  background:var(--surface-2);color:var(--muted);cursor:pointer}
+.netbar.off{background:var(--surface-2);color:var(--muted)}
+.netbar.warn{background:var(--fx-soft);color:var(--fx)}
+.netbar.hidden{display:none}
+
+/* شريط التحديث */
+.updbar{position:fixed;inset-inline:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:60;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--accent);color:#fff;border-radius:14px;padding:10px 14px;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.updbar .btn{background:#fff;color:var(--accent);border-color:#fff}
+@media (min-width:861px){.updbar{bottom:20px;inset-inline-start:auto;width:360px}}
+
+/* الإعداد الأول */
+body.setup .tabbar,body.setup .nav{display:none}
+body.setup .main{margin:0}
+.setup-wrap{max-width:440px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top)) 0 40px;display:flex;flex-direction:column;gap:12px}
+.setup-wrap h1{margin:4px 0 0;font-size:26px}
+.setup-wrap > p{margin:0 0 4px}
+.setup-wrap .card h3{margin:0 0 8px}
+.setup-logo{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:34px;font-weight:700;color:#fff;background:linear-gradient(135deg,#3b5bdb,#7048e8)}
+.card.warnc{border-color:var(--fx);background:var(--fx-soft)}
+.setup-wrap .inp{width:100%}
+
+/* مساحة آمنة أعلى الشاشة في التطبيق المثبّت */
+@media (display-mode: standalone){
+  .main{padding-top:calc(12px + env(safe-area-inset-top))}
+}

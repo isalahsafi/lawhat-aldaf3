@@ -1,0 +1,25 @@
+{
+  "name": "family-payment-board",
+  "version": "1.0.0",
+  "private": true,
+  "description": "لوحة الدفع العائلية - إدارة الدخل والمصاريف والالتزامات الشهرية",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "build:pwa": "node pwa/build.js",
+    "serve:pwa": "node pwa/serve.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "chart.js": "^4.6.1",
+    "exceljs": "^4.4.0",
+    "express": "^4.22.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "sql.js": "^1.15.2"
+  }
+}

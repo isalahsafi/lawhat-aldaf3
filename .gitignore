@@ -1,0 +1,15 @@
+# البيانات الشخصية لا تُرفع أبدًا
+data/
+*.db
+*.db-wal
+*.db-shm
+*.xlsx
+server/local-fixes.js
+
+# ملفات العمل والتصميم
+STORYBOARD*.html
+.claude/
+
+# مولّدة
+node_modules/
+pwa/dist/

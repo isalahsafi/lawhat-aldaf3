@@ -1,0 +1,11 @@
+{
+  "name": "لوحة الدفع",
+  "short_name": "لوحة الدفع",
+  "start_url": "/",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "ar",
+  "background_color": "#f5f7fb",
+  "theme_color": "#3b5bdb",
+  "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

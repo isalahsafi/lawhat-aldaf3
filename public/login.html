@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الدخول · لوحة الدفع</title>
+<link rel="stylesheet" href="/css/app.css">
+<link rel="manifest" href="/manifest.json">
+</head>
+<body>
+<div style="min-height:100vh;display:grid;place-items:center;padding:16px">
+  <form class="card" id="f" style="width:320px;text-align:center">
+    <div class="logo" style="margin:0 auto 12px;width:52px;height:52px;font-size:26px;border-radius:16px">₺</div>
+    <h2 style="margin:0 0 4px">لوحة الدفع</h2>
+    <p class="muted" style="margin:0 0 16px">أدخل رمز PIN</p>
+    <input class="inp num" id="p" type="password" inputmode="numeric" autocomplete="current-password" style="text-align:center;font-size:20px;letter-spacing:6px">
+    <div class="errline" id="e"></div>
+    <button class="btn p" style="width:100%;justify-content:center;margin-top:14px;padding:10px">دخول</button>
+  </form>
+</div>
+<script>
+document.getElementById('f').onsubmit = async (ev) => {
+  ev.preventDefault();
+  const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: document.getElementById('p').value }) });
+  if (r.ok) location.href = '/'; else document.getElementById('e').textContent = 'رمز غير صحيح';
+};
+</script>
+</body>
+</html>
