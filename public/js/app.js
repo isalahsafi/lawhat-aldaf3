@@ -162,8 +162,9 @@ const App = (() => {
     $$('[data-nav]').forEach((a) => a.classList.toggle('on', a.dataset.nav === navName));
     const view = $('#view');
     try { await (routes[r.name] || routes.home)(view, r); } catch (e) { console.error(e); view.innerHTML = `<div class="card empty"><h2>حدث خطأ</h2><p>${esc(e.message)}</p></div>`; }
+    if (window.Alerts) Alerts.decorate(view);
   }
-  async function refresh() { await reloadBoot(); await render(); }
+  async function refresh() { await reloadBoot(); if (window.Alerts) await Alerts.load(); await render(); }
 
   function setDisplay(cur) { state.display = cur; localStorage.setItem('display', cur); render(); }
   const displaySeg = () => `<div class="seg" data-display><button class="${state.display !== 'USD' ? 'on' : ''}" data-cur="${LOCAL}">₺</button><button class="${state.display === 'USD' ? 'on' : ''}" data-cur="USD">$</button></div>`;
@@ -194,7 +195,12 @@ const App = (() => {
     }
     try { await reloadBoot(); } catch (e) { $('#view').innerHTML = `<div class="card empty"><h2>تعذر الاتصال بالخادم</h2><p>${esc(e.message)}</p></div>`; return; }
     window.addEventListener('hashchange', render);
-    render();
+    await render();
+    // التنبيهات: عند الفتح، وعند العودة إلى التطبيق (قد يكون يومًا جديدًا)
+    if (window.Alerts) {
+      Alerts.autoShow();
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') Alerts.autoShow(); });
+    }
     if ('serviceWorker' in navigator) navigator.serviceWorker.register(window.FPB_LOCAL ? 'sw.js' : '/sw.js').catch(() => {});
   }
 

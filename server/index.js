@@ -21,9 +21,6 @@ const BACKUP_DIR = path.join(DATA_DIR, 'backups');
 
 app.use(express.json({ limit: '20mb' }));
 
-// ---------- المزامنة مع تطبيق الهاتف (برمز الجهاز، قبل التحقق برمز PIN) ----------
-require('./sync').install(app, { port: PORT, express, registerRoutes: (r) => routes(r, { publicSettings, hashPin }) });
-
 // ---------- رمز PIN للوصول من أجهزة الشبكة ----------
 const sessions = new Set();
 const hashPin = (p) => crypto.createHash('sha256').update('fpb:' + p).digest('hex');
@@ -129,6 +126,8 @@ function backup(tag = 'auto') {
   return name;
 }
 app.post('/api/backup', wrap(async (req, res) => res.json({ file: backup('manual') })));
+// نقل البيانات مع تطبيق الهاتف كملف
+require('./transfer').install(app, { express, backup, wrap });
 app.get('/api/backups', wrap(async (req, res) => res.json(fs.readdirSync(BACKUP_DIR).filter((f) => f.endsWith('.db')).sort().reverse()
   .map((f) => ({ file: f, size: fs.statSync(path.join(BACKUP_DIR, f)).size })))));
 function dailyBackup() {

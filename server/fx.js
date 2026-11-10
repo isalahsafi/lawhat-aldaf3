@@ -13,7 +13,7 @@ let pinnedToday = null;
 const today = () => pinnedToday || iso(new Date());
 async function withToday(day, fn) {
   const prev = pinnedToday;
-  pinnedToday = /^d{4}-d{2}-d{2}$/.test(day || '') ? day : null;
+  pinnedToday = /^\d{4}-\d{2}-\d{2}$/.test(day || '') ? day : null;
   try { return await fn(); } finally { pinnedToday = prev; }
 }
 const addDays = (s, n) => { const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() + n); return iso(d); };

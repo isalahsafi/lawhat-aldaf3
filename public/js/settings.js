@@ -5,7 +5,7 @@
   // على الهاتف: المزامنة والنسخ الاحتياطي بدل الاستيراد، ولا وصول من الشبكة
   const PHONE = !!window.FPB_LOCAL;
   const TABS = PHONE
-    ? [['items', 'البنود'], ['sections', 'الأقسام'], ['rates', 'أسعار الصرف'], ['phone', 'المزامنة والبيانات'], ['audit', 'سجل التعديلات'], ['access', 'الحساب']]
+    ? [['items', 'البنود'], ['sections', 'الأقسام'], ['rates', 'أسعار الصرف'], ['phone', 'البيانات'], ['audit', 'سجل التعديلات'], ['access', 'الحساب']]
     : [['items', 'البنود'], ['sections', 'الأقسام'], ['rates', 'أسعار الصرف'], ['data', 'البيانات والاستيراد'], ['audit', 'سجل التعديلات'], ['access', 'الحساب والوصول'], ['devices', 'تطبيق الهاتف']];
   // رابط تطبيق الهاتف المنشور على GitHub Pages
   const PHONE_APP_URL = 'https://isalahsafi.github.io/lawhat-aldaf3/';
@@ -180,64 +180,54 @@
     const c = $('#clrPin', el); if (c) c.onclick = async () => { await put('/api/settings', { pin: '', lan_enabled: false }); await App.reloadBoot(); access(el); };
   }
 
-  // ---------- تطبيق الهاتف (على الكمبيوتر): العنوان الآمن وربط الأجهزة ----------
-  let pairTimer = null;
-  async function devices(el) {
-    clearInterval(pairTimer);
-    el.innerHTML = '<div class="spinner"></div>';
-    let info;
-    try { info = await get('/api/sync/info'); } catch (e) { el.innerHTML = `<div class="card">${esc(e.message)}</div>`; return; }
-    const ts = info.tailscale || {};
-    const p = (t) => `<p style="margin:0;font-size:13.5px">${t}</p>`;
-    const step = (ok, n, title, body) => `<div class="card" style="margin-bottom:12px"><h3>${ok ? '✓' : n} · ${title}</h3>${body}</div>`;
-    const s1 = !ts.installed ? p('ثبّت Tailscale من <b class="num">tailscale.com/download</b> على هذا الكمبيوتر، ومن App Store على الآيفون، وسجّل الدخول بنفس الحساب على الجهازين. ثم افتح هذه الصفحة من جديد.')
-      : !ts.running ? p('Tailscale مثبّت لكنه غير متصل. شغّله وسجّل الدخول، ثم افتح هذه الصفحة من جديد.')
-        : p(`متصل باسم <b class="num">${esc(ts.name || '')}</b>. تأكد أن Tailscale متصل على الآيفون أيضًا.`);
-    const s2 = ts.serving ? p(`المنصة متاحة لأجهزتك فقط على <b class="num">${esc(ts.url)}</b>`)
-      : `${p('يمرر Tailscale المنصة عبر عنوان آمن (https) لا يصل إليه إلا أجهزتك.')}<button class="btn p" id="serve" style="margin-top:10px">تفعيل العنوان الآمن</button>
-        <pre id="serveOut" class="num" style="display:none;white-space:pre-wrap;text-align:left;direction:ltr;font-size:12px;background:var(--surface-2);border-radius:10px;padding:10px;margin:10px 0 0"></pre>`;
-    const s3 = PHONE_APP_URL ? p(`افتح <b class="num">${esc(PHONE_APP_URL)}</b> في Safari على الآيفون ← زر المشاركة ← «إضافة إلى الشاشة الرئيسية»، ثم افتحه من أيقونته.`)
-      : p('يظهر رابط التطبيق هنا بعد نشره على GitHub.');
-    el.innerHTML = `<p class="muted" style="margin-top:0">تطبيق الآيفون يحمل نسخة كاملة من بياناتك ويعمل دون إنترنت، ويتزامن مع هذه المنصة عبر اتصال آمن (Tailscale).</p>
-      ${step(ts.installed && ts.running, '1', 'Tailscale على الكمبيوتر والآيفون', s1)}
-      ${step(ts.serving, '2', 'العنوان الآمن للمنصة', ts.running ? s2 : p('يُفعَّل من هنا بعد تشغيل Tailscale.'))}
-      ${step(false, '3', 'تثبيت التطبيق على الآيفون', s3)}
-      <div class="card" style="margin-bottom:12px"><h3>ربط جهاز جديد</h3><div id="pairBox"><button class="btn p" id="newPair" ${ts.serving ? '' : 'disabled'}>إنشاء رمز ربط</button>
-        ${ts.serving ? '' : '<span class="faint" style="font-size:12.5px;margin-inline-start:8px">يتطلب العنوان الآمن أولًا</span>'}</div></div>
-      <div class="card"><h3>الأجهزة المرتبطة</h3>${info.devices.length
-        ? `<table class="tbl">${info.devices.map((d) => `<tr><td>📱 ${esc(d.name)}</td><td class="faint" style="font-size:12.5px">آخر اتصال: ${esc(new Date(d.lastSeen).toLocaleString('ar'))}</td><td><button class="btn sm danger" data-rev="${esc(d.id)}">إلغاء الربط</button></td></tr>`).join('')}</table>`
-        : '<p class="faint" style="margin:0">لا توجد أجهزة.</p>'}</div>`;
 
-    const sv = $('#serve', el);
-    if (sv) sv.onclick = async () => {
-      sv.disabled = true; sv.textContent = 'جارٍ التفعيل…';
-      try {
-        const r = await post('/api/sync/serve');
-        if (r.tailscale && r.tailscale.serving) { toast('✓ فُعّل العنوان الآمن'); devices(el); return; }
-        const o = $('#serveOut', el); o.style.display = 'block'; o.textContent = r.output || 'لم يكتمل التفعيل';
-        sv.disabled = false; sv.textContent = 'إعادة المحاولة';
-        toast('إن ظهر رابط: افتحه لتفعيل HTTPS في حساب Tailscale، ثم أعد المحاولة', { ms: 9000 });
-      } catch (e) { fail(e); sv.disabled = false; sv.textContent = 'تفعيل العنوان الآمن'; }
+  // ---------- تطبيق الهاتف (على الكمبيوتر): نقل البيانات كملف ----------
+  function devices(el) {
+    const p = (t) => `<p style="margin:0;font-size:13.5px">${t}</p>`;
+    el.innerHTML = `<p class="muted" style="margin-top:0">تطبيق الآيفون يحمل نسخة كاملة من بياناتك ويعمل دون إنترنت. تنتقل البيانات بينه وبين المنصة <b>كملف</b>، دون اتصال مباشر.</p>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+        <div class="card"><h3>📱 تثبيت التطبيق</h3>
+          ${p(`افتح <b class="num">${esc(PHONE_APP_URL)}</b> في Safari على الآيفون ← زر المشاركة ← «إضافة إلى الشاشة الرئيسية»، ثم افتحه من أيقونته.`)}</div>
+        <div class="card"><h3>⇩ تصدير نسخة للهاتف</h3>
+          ${p('ملف فيه كل بيانات المنصة. أرسله إلى الآيفون (AirDrop أو iCloud Drive)، ثم في التطبيق: الإعدادات ← البيانات ← «استعادة من ملف».')}
+          <a class="btn p" href="/api/backup/phone" style="margin-top:10px">⇩ تصدير نسخة للهاتف</a></div>
+        <div class="card"><h3>⇧ استيراد نسخة من الهاتف</h3>
+          ${p('في التطبيق: الإعدادات ← البيانات ← «نسخة احتياطية الآن»، وانقل الملف إلى هذا الكمبيوتر، ثم اختره هنا. تحل محل بيانات المنصة، مع نسخة احتياطية تلقائية قبلها.')}
+          <button class="btn p" id="imp" style="margin-top:10px">⇧ اختيار ملف من الهاتف</button></div>
+      </div>
+      <div class="card" style="margin-top:12px"><h3>الترتيب الصحيح حتى لا يضيع شيء</h3>
+        <ol style="margin:0;padding-inline-start:20px;font-size:13.5px;line-height:1.9">
+          <li>الإدخال اليومي يكون على <b>الهاتف</b>.</li>
+          <li>لاستيراد ملف Excel أو التعديل هنا: انقل نسخة الهاتف إلى المنصة <b>أولًا</b>.</li>
+          <li>بعد الانتهاء: صدّر نسخة للهاتف واستعدها فيه.</li>
+        </ol>
+        <p class="faint" style="font-size:12.5px;margin:8px 0 0">كل نقل يستبدل النسخة كاملة ولا يدمجها، لذلك عدّل في مكان واحد في كل مرة.</p></div>`;
+
+    $('#imp', el).onclick = () => {
+      const i = document.createElement('input');
+      i.type = 'file';
+      i.accept = '.db,.sqlite,application/octet-stream';
+      i.onchange = async () => {
+        const f = i.files[0];
+        if (!f) return;
+        try {
+          const r = await App.api('POST', '/api/backup/inspect', await f.arrayBuffer(), true);
+          const when = (s) => (s.last_edit ? `<span class="num">${esc(s.last_edit.slice(0, 16))}</span>` : '—');
+          const older = r.file.last_edit && r.current.last_edit && r.file.last_edit < r.current.last_edit;
+          const m = modal(`<h2>استيراد نسخة من الهاتف</h2>
+            <table class="tbl"><tr><th></th><th>الملف</th><th>المنصة الآن</th></tr>
+              <tr><td>آخر تعديل</td><td>${when(r.file)}</td><td>${when(r.current)}</td></tr>
+              <tr><td>عدد العمليات</td><td class="num">${fmtN(r.file.entries)}</td><td class="num">${fmtN(r.current.entries)}</td></tr>
+              <tr><td>آخر شهر</td><td>${r.file.last_month ? ymLabel(r.file.last_month) : '—'}</td><td>${r.current.last_month ? ymLabel(r.current.last_month) : '—'}</td></tr></table>
+            ${older ? '<div class="card" style="border-color:var(--bad);margin-top:10px;font-size:13px">⚠ الملف <b>أقدم</b> من بيانات المنصة: التعديلات الأحدث هنا ستُستبدل.</div>' : ''}
+            <p class="faint" style="font-size:12.5px">تُحفظ نسخة احتياطية من بيانات المنصة الحالية قبل الاستبدال.</p>
+            <div class="mf"><button class="btn p" id="ok">استبدال بيانات المنصة</button><button class="btn" data-close>إلغاء</button></div>`);
+          $('#ok', m.el).onclick = async () => {
+            try { await post('/api/backup/restore', { token: r.token }); m.close(); toast('✓ استُوردت نسخة الهاتف'); await App.refresh(); } catch (e) { fail(e); }
+          };
+        } catch (e) { fail(e); }
+      };
+      i.click();
     };
-    const np = $('#newPair', el);
-    if (np) np.onclick = async () => {
-      try {
-        const r = await post('/api/sync/pair-code');
-        const box = $('#pairBox', el);
-        const tick = () => {
-          const left = Math.max(0, Math.round((r.expires - Date.now()) / 1000));
-          if (!left || !document.body.contains(box)) { clearInterval(pairTimer); if (document.body.contains(box)) devices(el); return; }
-          box.innerHTML = `<p style="margin:0 0 8px;font-size:13.5px">في التطبيق على الآيفون أدخل:</p>
-            <div class="kv"><span>عنوان الكمبيوتر</span><b class="num" style="text-align:start;word-break:break-all">${esc(((r.tailscale && r.tailscale.url) || '').replace('https://', ''))}</b>
-            <span>رمز الربط</span><b class="num" style="text-align:start;font-size:28px;letter-spacing:6px">${r.code}</b></div>
-            <p class="faint" style="font-size:12px;margin:8px 0 0">صالح ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} · لمرة واحدة</p>`;
-        };
-        tick(); pairTimer = setInterval(tick, 1000);
-      } catch (e) { fail(e); }
-    };
-    $$('[data-rev]', el).forEach((b) => b.onclick = async () => {
-      if (!(await confirmBox('إلغاء ربط هذا الجهاز؟ لن يتمكن من المزامنة حتى يُربط من جديد.', 'إلغاء الربط', true))) return;
-      await del('/api/sync/devices/' + b.dataset.rev); devices(el);
-    });
   }
 })();

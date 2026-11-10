@@ -195,6 +195,7 @@ module.exports = function register(app, ctx) {
   app.delete('/api/contribs/:id', wrap(async (req, res) => { db.prepare('DELETE FROM goal_contribs WHERE id=?').run(req.params.id); res.json(goalsList()); }));
 
   // ---------- التقارير وسجل التعديلات ----------
+  app.get('/api/alerts', wrap(async (req, res) => res.json(core.alerts())));
   app.get('/api/reports/all', wrap(async (req, res) => res.json(core.allData())));
   app.get('/api/audit', wrap(async (req, res) => res.json(db.prepare('SELECT id, at, action, tbl, row_id, summary, undone FROM audit_log ORDER BY id DESC LIMIT 300').all())));
   app.post('/api/audit/:id/undo', wrap(async (req, res) => { core.undo(Number(req.params.id)); res.json({ ok: true }); }));

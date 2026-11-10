@@ -839,11 +839,68 @@ async function fillPendingRates() {
   return { pending: list.length - filled, filled };
 }
 
+// ============ التنبيهات ============
+// الالتزامات غير المدفوعة (المصاريف الأساسية والاشتراكات وغيرها، دون الدخل والمصاريف المتغيرة):
+// المتأخرة (من هذا الشهر والسابق)، والمستحقة اليوم، وغدًا.
+// موعد البند: تاريخه المسجّل، أو يوم الاستحقاق المحفوظ لتكراره أو لبنده المعتاد.
+// إن كان «غدًا» في شهر لم يُنشأ بعد، يُستنتج من البنود المعتادة والتكرارات.
+function alerts() {
+  const today = fx.today();
+  const t1 = new Date(today + 'T12:00:00');
+  t1.setDate(t1.getDate() + 1);
+  const tomorrow = fx.iso(t1);
+  const secs = Object.fromEntries(sections().map((s) => [s.id, s]));
+  const isCommit = (sid) => { const s = secs[sid]; return !!s && s.kind === 'expense' && s.key !== 'variable' && s.key !== 'debts'; };
+  const tpl = Object.fromEntries(templates().map((t) => [t.id, t]));
+  const ser = Object.fromEntries(db.prepare('SELECT * FROM series').all().map((s) => [s.id, s]));
+  const dueOf = (e, ym) => e.due_date
+    || (e.series_id && ser[e.series_id] && monthDue(ser[e.series_id].due_day, ym))
+    || (e.template_id && tpl[e.template_id] && monthDue(tpl[e.template_id].due_day, ym)) || null;
+  const kindOf = (due) => (due < today ? 'overdue' : due === today ? 'today' : due === tomorrow ? 'tomorrow' : null);
+
+  const cur = today.slice(0, 7);
+  const items = [];
+  const undated = [];
+  for (const ym of [...new Set([Calc.shiftYm(cur, -1), cur, tomorrow.slice(0, 7)])]) {
+    const m = q.monthByYm.get(ym);
+    if (m) {
+      for (const e of q.entries.all(m.id)) {
+        if (!isCommit(e.section_id) || e.status === 'paid') continue;
+        const base = { entry_id: e.id, ym, name: e.name, amount: e.amount ?? e.planned, currency: e.currency, section_id: e.section_id,
+          template_id: e.template_id, series_id: e.series_id, partial: e.status === 'partial', paid_amount: e.paid_amount };
+        const due = dueOf(e, ym);
+        if (!due) { if (ym === cur) undated.push(base); continue; }
+        const kind = kindOf(due);
+        if (kind && (kind !== 'overdue' || ym <= cur)) items.push({ ...base, kind, due });
+      }
+      continue;
+    }
+    // شهر الغد لم يُنشأ بعد
+    if (ym !== tomorrow.slice(0, 7) || ym === cur) continue;
+    const [y, mo] = ym.split('-').map(Number);
+    const seriesTpl = new Set(Object.values(ser).filter((s) => s.status === 'active' && s.template_id).map((s) => s.template_id));
+    for (const t of Object.values(tpl)) {
+      if (!t.active || !isCommit(t.section_id) || seriesTpl.has(t.id) || !templateApplies(t, y, mo)) continue;
+      const due = monthDue(t.due_day, ym);
+      if (due === tomorrow) items.push({ kind: 'tomorrow', virtual: true, ym, due, name: t.name, amount: t.planned_amount, currency: t.currency, section_id: t.section_id, template_id: t.id, series_id: null });
+    }
+    for (const s of Object.values(ser)) {
+      if (s.status !== 'active' || !isCommit(s.section_id)) continue;
+      const p = periodFor(q.periods.all(s.id), ym);
+      const due = p && monthDue(s.due_day, ym);
+      if (due === tomorrow) items.push({ kind: 'tomorrow', virtual: true, ym, due, name: s.name, amount: p.amount, currency: p.currency, section_id: s.section_id, template_id: s.template_id, series_id: s.id });
+    }
+  }
+  const order = { overdue: 0, today: 1, tomorrow: 2 };
+  items.sort((a, b) => order[a.kind] - order[b.kind] || a.due.localeCompare(b.due) || a.name.localeCompare(b.name));
+  return { today, tomorrow, items, undated };
+}
+
 function audit(summary) { insAudit.run('note', 'note', null, null, null, summary); }
 
 module.exports = {
   q, sections, templates, track, undo, insertRow, updateRow, deleteRow, createMonth, createMonthSync, resolveMonthRate, getMonth, listMonths, allData,
   setMonthRate, deleteMonth, updateEntry, createEntry, deleteEntry, fillFromPrevious, previewSeries, saveSeries, editSeriesFrom, stopSeries,
   deleteSeries, confirmSeries, getSeries, resetOverride, listSeries, applySeries, createDebt, addDebtTxn, deleteDebtTxn, deleteDebt, listDebts, getDebt,
-  updateDebt, partyId, quickAdd, fillPendingRates, audit, matchEntry, periodFor, currentYm, monthDue,
+  updateDebt, partyId, quickAdd, fillPendingRates, alerts, audit, matchEntry, periodFor, currentYm, monthDue,
 };
