@@ -151,3 +151,7 @@ tr.cfr td{background:color-mix(in srgb,var(--warn) 7%,transparent)}
 .al-m b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .al-m span{font-size:12px}
 .al-a{font-weight:600;white-space:nowrap}
+
+/* زر إخفاء المبالغ في الصفحة الرئيسية */
+.btn.eye{width:38px;height:38px;padding:0;display:inline-grid;place-items:center;font-size:17px;border-radius:12px}
+.btn.eye.on{background:var(--accent-soft);border-color:var(--accent)}

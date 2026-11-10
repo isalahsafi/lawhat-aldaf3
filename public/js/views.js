@@ -78,7 +78,7 @@
 
     view.innerHTML = `
       <div class="topbar"><h1>${name ? 'أهلًا ' + esc(name) + ' · ' : ''}${ymLabel(ym)}</h1>
-        <div class="ms row">${displaySeg()}<button class="btn p hide-m" id="qa">+ إضافة سريعة</button><a class="btn hide-m" href="#/month/${ym}">فتح الشهر</a></div></div>
+        <div class="ms row">${App.privBtn()}${displaySeg()}<button class="btn p hide-m" id="qa">+ إضافة سريعة</button><a class="btn hide-m" href="#/month/${ym}">فتح الشهر</a></div></div>
       ${!rate ? `<div class="card" style="border-color:var(--warn);margin-bottom:12px">⚠ لا يتوفر سعر صرف لهذا الشهر. <a href="#/month/${ym}">أدخله يدويًا</a></div>` : ''}
       <div class="card hero">
         <div class="top">

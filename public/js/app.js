@@ -176,7 +176,18 @@ const App = (() => {
     $('#themeBtn').textContent = t === 'dark' ? '☀' : '🌙';
     if (window.Chart) Chart.defaults.color = getComputedStyle(document.body).getPropertyValue('--muted').trim();
   }
-  function applyPriv(on) { document.body.classList.toggle('priv', on); localStorage.setItem('priv', on ? '1' : ''); $('#privBtn').classList.toggle('p', on); }
+  function applyPriv(on) {
+    document.body.classList.toggle('priv', on);
+    localStorage.setItem('priv', on ? '1' : '');
+    $('#privBtn').classList.toggle('p', on);
+    $$('[data-priv]').forEach((b) => { b.textContent = on ? '🙈' : '👁'; b.title = on ? 'إظهار المبالغ' : 'إخفاء المبالغ'; b.classList.toggle('on', on); });
+  }
+  // زر إخفاء/إظهار المبالغ في رأس الصفحة الرئيسية
+  const privBtn = () => {
+    const on = document.body.classList.contains('priv');
+    return `<button class="btn eye ${on ? 'on' : ''}" data-priv type="button" title="${on ? 'إظهار المبالغ' : 'إخفاء المبالغ'}" aria-label="إخفاء المبالغ">${on ? '🙈' : '👁'}</button>`;
+  };
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-priv]')) applyPriv(!document.body.classList.contains('priv')); });
 
   async function start() {
     applyTheme(document.documentElement.dataset.theme || 'light');
@@ -207,6 +218,6 @@ const App = (() => {
   return {
     LOCAL, state, api, get, post, patch, put, del, reloadBoot, refresh, render, route, modal, confirmBox, toast, fail,
     $, $$, esc, pad, MONTHS, MONTHS_S, ymLabel, ymShort, shiftYm, todayYm, dateLabel, curSym, fmtN, money, m$, disp, d$, other$, compact,
-    sectionById, sectionByKey, templateById, secColor, iconFor, avatar, ymPicker, ymRead, displaySeg, start,
+    sectionById, sectionByKey, templateById, secColor, iconFor, avatar, ymPicker, ymRead, displaySeg, privBtn, start,
   };
 })();
