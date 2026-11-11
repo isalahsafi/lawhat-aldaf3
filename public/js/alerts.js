@@ -57,16 +57,7 @@ const Alerts = (() => {
       const i = items[Number(b.dataset.pay)];
       b.disabled = true;
       try {
-        let id = i.entry_id;
-        // بند في شهر لم يُنشأ بعد: يُنشأ الشهر ثم يُسجَّل السداد
-        if (i.virtual) {
-          await post('/api/months', { year: Number(i.ym.slice(0, 4)), month: Number(i.ym.slice(5)) });
-          const again = await get('/api/alerts');
-          const hit = again.items.find((x) => !x.virtual && x.ym === i.ym && x.name === i.name);
-          id = hit && hit.entry_id;
-          if (!id) throw new Error('تعذر إيجاد البند في الشهر الجديد');
-        }
-        const r = await patch('/api/entries/' + id, { status: 'paid' });
+        const r = await pay(i);
         toast(`✓ ${esc(i.name)} مدفوع`, { undo: r.auditId });
         m.close();
         await App.refresh();
@@ -88,6 +79,20 @@ const Alerts = (() => {
     });
   }
 
+  // تسجيل سداد التزام من القائمة (يُستخدم هنا وفي الإضافة السريعة)
+  async function pay(i) {
+    let id = i.entry_id;
+    // بند في شهر لم يُنشأ بعد: يُنشأ الشهر ثم يُسجَّل السداد
+    if (i.virtual) {
+      await post('/api/months', { year: Number(i.ym.slice(0, 4)), month: Number(i.ym.slice(5)) });
+      const again = await get('/api/alerts');
+      const hit = again.items.find((x) => !x.virtual && x.ym === i.ym && x.name === i.name);
+      id = hit && hit.entry_id;
+      if (!id) throw new Error('تعذر إيجاد البند في الشهر الجديد');
+    }
+    return patch('/api/entries/' + id, { status: 'paid' });
+  }
+
   async function open() { await load(); show(false); }
 
   // عند فتح التطبيق: تظهر النافذة إذا تغيّرت القائمة منذ آخر عرض (مرة في اليوم على الأكثر لنفس القائمة)
@@ -102,7 +107,7 @@ const Alerts = (() => {
     show(true);
   }
 
-  return { load, decorate, open, autoShow };
+  return { load, decorate, open, autoShow, pay };
 })();
 
 window.Alerts = Alerts;
